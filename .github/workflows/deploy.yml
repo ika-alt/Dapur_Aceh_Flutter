@@ -1,0 +1,51 @@
+name: Deploy Flutter Web to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # Ganti dengan 'master' jika branch utama kamu bernama master
+
+# Memberikan izin token GITHUB_TOKEN untuk men-deploy ke GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Mengambil kode dari repositori
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Setup Java (diperlukan oleh beberapa dependensi Flutter)
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # 3. Setup Flutter Environment
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable' # Menggunakan Flutter versi stable terbaru
+
+      # 4. Mengambil dependensi package (flutter pub get)
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 5. Build Flutter Web
+      # Menggunakan opsi '--base-href' sangat penting agar aset/path di GitHub Pages tidak error.
+      # Isi dengan '/nama-repositori-kamu/' (pastikan diapit garis miring).
+      - name: Build Flutter Web
+        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+
+      # 6. Deploy ke GitHub Pages menggunakan action bawaan GitHub
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build/web # Folder hasil build yang ingin di-upload
+          branch: gh-pages # Branch tujuan tempat file web disimpan (akan dibuat otomatis jika belum ada)gi
